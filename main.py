@@ -78,7 +78,29 @@ async def restart(client, message):
         FFMPEG_PROCESSES[CHAT] = ""
     Thread(
         target=stop_and_restart
-        ).start()    
+        ).start()
+    
+    @bot.on_message(filters.command(["vplay", f"vplay@{USERNAME}"]) & filters.user(Config.ADMINS) & (filters.chat(CHAT) | filters.private))
+async def vplay(client, message):
+    # Extract the URL or query from the message
+    query = " ".join(message.command[1:])
+    
+    # Send a response that the bot is processing the request
+    await message.reply_text(f"🔄 Searching for {query} on YouTube...")
+    
+    try:
+        # Use YoutubeDL to fetch video details
+        with YoutubeDL(ydl_opts) as ydl:
+            info_dict = ydl.extract_info(query, download=False)
+            video_url = info_dict.get("url", None)
+        
+        # Start playing the video in voice chat
+        await mp.start_video_play(video_url)
+        await message.reply_text(f"▶️ Now playing: {info_dict['title']}")
+        
+    except Exception as e:
+        await message.reply_text(f"❌ Failed to play the video. Error: {str(e)}")
+
 
 
 bot.send(
@@ -195,7 +217,15 @@ bot.send(
             types.BotCommand(
                 command="restart",
                 description="Update and restart the bot"
+            ),
+            types.BotCommand(
+                command="vplay",
+                description="Play video from YouTube"
             )
+        ]
+    )
+)
+
         ]
     )
 )
